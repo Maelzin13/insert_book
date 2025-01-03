@@ -1,0 +1,7 @@
+docx
+odf
+mysql
+fastapi
+nest_asyncio
+uvicorn
+dotenv
