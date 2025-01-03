@@ -1,7 +1,7 @@
-docx
+python-docx
 odf
-mysql
 fastapi
 nest_asyncio
 uvicorn
-dotenv
+python-dotenv
+pymysql
