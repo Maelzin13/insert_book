@@ -60,14 +60,14 @@ def insert_paragrafo(artigo_id, conteudo, tipo=None):
 def insert_prefacio():
     print("Inserindo prefácio...")
 
-    # Criar a estrutura geral para o prefácio, se necessário
+    # Criar a estrutura geral para o prefácio
     livro_id = insert_livro("Livro Geral")
-    titulo_id = insert_titulo(livro_id, "Título Geral")
-    capitulo_id = insert_capitulo(titulo_id, "Capítulo Geral")
-    secao_id = insert_secao(capitulo_id, "Seção Geral")
-    artigo_id = insert_artigo(secao_id, "Artigo Geral")
+    titulo_id = insert_titulo(livro_id, "Título do Prefácio")
+    capitulo_id = insert_capitulo(titulo_id, "Capítulo do Prefácio")
+    secao_id = insert_secao(capitulo_id, "Seção do Prefácio")
+    artigo_id = insert_artigo(secao_id, "Artigo do Prefácio")
 
-    # Inserir o conteúdo do prefácio
+    # Inserir o conteúdo do prefácio como um parágrafo com o tipo 'prefácio'
     conteudo_prefacio = (
         "CONVENÇÕES\n"
         "▪ As remissões a dispositivos de normas legais diferentes do Regimento são precedidas da respectiva sigla, de acordo com as abreviaturas convencionadas.\n"
@@ -127,21 +127,20 @@ def processar_livro(file_path):
     livro_id = insert_livro("Regimento Interno Comentado")
     print(f"Livro inserido com ID: {livro_id}")
 
-    titulo_id = None
-    capitulo_id = None
-    secao_id = None
-    artigo_id = None
+    titulo_id, capitulo_id, secao_id, artigo_id = None, None, None, None
 
     for linha in estrutura:
         if linha.startswith("TÍTULO"):
             titulo_id = insert_titulo(livro_id, linha)
             print(f"Título inserido: {linha}")
+            capitulo_id, secao_id, artigo_id = None, None, None
         elif linha.startswith("CAPÍTULO"):
             if not titulo_id:
                 titulo_id = insert_titulo(livro_id, "Título Geral")
                 print("Título Geral criado.")
             capitulo_id = insert_capitulo(titulo_id, linha)
             print(f"Capítulo inserido: {linha}")
+            secao_id, artigo_id = None, None
         elif linha.startswith("Seção"):
             if not capitulo_id:
                 if not titulo_id:
@@ -151,6 +150,7 @@ def processar_livro(file_path):
                 print("Capítulo Geral criado.")
             secao_id = insert_secao(capitulo_id, linha)
             print(f"Seção inserida: {linha}")
+            artigo_id = None
         elif linha.startswith("Art."):
             if not secao_id:
                 if not capitulo_id:
@@ -173,7 +173,7 @@ def processar_livro(file_path):
                         capitulo_id = insert_capitulo(titulo_id, "Capítulo Geral")
                         print("Capítulo Geral criado.")
                     secao_id = insert_secao(capitulo_id, "Seção Geral")
-                    print("Seção Geral criada.")
+                    print("Seção Geral criado.")
                 artigo_id = insert_artigo(secao_id, "Artigo Geral")
                 print("Artigo Geral criado.")
             insert_paragrafo(artigo_id, linha)
