@@ -68,6 +68,18 @@ def insert_remissao(paragrafo_id, conteudo):
     sql = "INSERT INTO remissaos (paragrafo_de_id, conteudo) VALUES (%s, %s)"
     return execute_insert(sql, (paragrafo_id, conteudo))
 
+def process_titulos(livro_id, conteudo):
+    return insert_titulo(livro_id, conteudo)
+
+def process_capitulos(titulo_id, conteudo):
+    return insert_capitulo(titulo_id, conteudo)
+
+def process_artigos(secao_id, conteudo):
+    return insert_artigo(secao_id, conteudo)
+
+def process_paragrafos(artigo_id, conteudo, tipo=None):
+    return insert_paragrafo(artigo_id, conteudo, tipo)
+
 # Extração de Notas de Rodapé
 def extract_notes(docx_path, note_type="footnotes"):
     notes = []
@@ -148,21 +160,21 @@ def processar_livro(file_path):
                 print(f"Nota de rodapé associada: {nota_ref} -> {nota_conteudo}")
 
         if tipo == "titulos":
-            titulo_id = insert_titulo(livro_id, conteudo)
+            titulo_id = process_titulos(livro_id, conteudo)
             print(f"Título inserido: {conteudo}")
         elif tipo == "capitulos":
-            capitulo_id = insert_capitulo(titulo_id, conteudo)
+            capitulo_id = process_capitulos(titulo_id, conteudo)
             print(f"Capítulo inserido: {conteudo}")
         elif tipo == "secaos":
             secao_id = insert_secao(capitulo_id, conteudo)
             print(f"Seção inserida: {conteudo}")
         elif tipo == "artigos":
-            artigo_id = insert_artigo(capitulo_id, conteudo)
+            artigo_id = process_artigos(secao_id, conteudo)
             print(f"Artigo inserido: {conteudo}")
         elif tipo.startswith("paragrafo"):
             tipo_paragrafo = re.search(r"tipo: (.+)", tipo)
             tipo_paragrafo = tipo_paragrafo.group(1) if tipo_paragrafo else None
-            insert_paragrafo(artigo_id, conteudo, tipo_paragrafo)
+            process_paragrafos(artigo_id, conteudo, tipo_paragrafo)
             print(f"Parágrafo inserido: {conteudo}")
         elif tipo == "remissaos":
             if 'artigo_id' not in locals():
