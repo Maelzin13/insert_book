@@ -208,8 +208,8 @@ def processar_livro(file_path):
 
         for nota_ref, nota_conteudo in estrutura["notas_rodape"].items():
             if nota_ref in conteudo:
-                conteudo = conteudo.replace(nota_ref, "")
-                insert_nota_rodape("elemento", livro_id, nota_conteudo)
+                conteudo = conteudo.replace(nota_ref, "") 
+                insert_nota_rodape(tipo, livro_id, nota_conteudo)
                 print(f"Nota de rodapé associada: {nota_ref} -> {nota_conteudo}")
 
         if tipo == "titulos":
