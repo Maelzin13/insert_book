@@ -13,6 +13,7 @@ def get_db_connection():
         host="localhost",
         user="root",
         password="",
+        # database="livro_insert"
         database="livro_crud"
     )
 
@@ -31,22 +32,73 @@ def execute_insert(sql, params):
         cursor.close()
         db.close()
 
+def get_titulo_id(livro_id, conteudo):
+    sql = "SELECT id FROM titulos WHERE livro_id = %s AND conteudo = %s"
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        cursor.execute(sql, (livro_id, conteudo))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    finally:
+        cursor.close()
+        db.close()
+
+def get_capitulo_id(titulo_id, conteudo):
+    sql = "SELECT id FROM capitulos WHERE titulo_id = %s AND conteudo = %s"
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        cursor.execute(sql, (titulo_id, conteudo))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    finally:
+        cursor.close()
+        db.close()
+
+def get_secao_id(capitulo_id, conteudo):
+    sql = "SELECT id FROM secaos WHERE capitulo_id = %s AND conteudo = %s"
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        cursor.execute(sql, (capitulo_id, conteudo))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    finally:
+        cursor.close()
+        db.close()
+
 # Funções de Inserção no Banco
 def insert_livro(conteudo):
     sql = "INSERT INTO livros (conteudo) VALUES (%s)"
     return execute_insert(sql, (conteudo,))
 
 def insert_titulo(livro_id, conteudo):
-    sql = "INSERT INTO titulos (livro_id, conteudo) VALUES (%s, %s)"
-    return execute_insert(sql, (livro_id, conteudo))
+    titulo_id = get_titulo_id(livro_id, conteudo)
+    if not titulo_id:
+        titulo_id = execute_insert("INSERT INTO titulos (livro_id, conteudo) VALUES (%s, %s)", (livro_id, conteudo))
+        print(f"Título criado: {conteudo} (ID: {titulo_id})")
+    else:
+        print(f"Título já existente: {conteudo} (ID: {titulo_id})")
+    return titulo_id
 
 def insert_capitulo(titulo_id, conteudo):
-    sql = "INSERT INTO capitulos (titulo_id, conteudo) VALUES (%s, %s)"
-    return execute_insert(sql, (titulo_id, conteudo))
+    capitulo_id = get_capitulo_id(titulo_id, conteudo)
+    if not capitulo_id:
+        capitulo_id = execute_insert("INSERT INTO capitulos (titulo_id, conteudo) VALUES (%s, %s)", (titulo_id, conteudo))
+        print(f"Capítulo criado: {conteudo} (ID: {capitulo_id})")
+    else:
+        print(f"Capítulo já existente: {conteudo} (ID: {capitulo_id})")
+    return capitulo_id
 
 def insert_secao(capitulo_id, conteudo):
-    sql = "INSERT INTO secaos (capitulo_id, conteudo) VALUES (%s, %s)"
-    return execute_insert(sql, (capitulo_id, conteudo))
+    secao_id = get_secao_id(capitulo_id, conteudo)
+    if not secao_id:
+        secao_id = execute_insert("INSERT INTO secaos (capitulo_id, conteudo) VALUES (%s, %s)", (capitulo_id, conteudo))
+        print(f"Seção criada: {conteudo} (ID: {secao_id})")
+    else:
+        print(f"Seção já existente: {conteudo} (ID: {secao_id})")
+    return secao_id
 
 def insert_artigo(secao_id, conteudo):
     sql = "INSERT INTO artigos (secao_id, conteudo) VALUES (%s, %s)"
@@ -145,7 +197,8 @@ def processar_livro(file_path):
     capitulo_id = insert_capitulo(titulo_id, "Capítulo Geral")
     secao_id = insert_secao(capitulo_id, "Seção Geral")
     artigo_id = insert_artigo(secao_id, "Artigo Geral")
-    
+    print(f"Hierarquia inicial criada: Título {titulo_id}, Capítulo {capitulo_id}, Seção {secao_id}, Artigo {artigo_id}")
+
     for elemento in estrutura["elementos"]:
         tipo = elemento["tipo"]
         conteudo = elemento["conteudo"].strip()
@@ -155,19 +208,25 @@ def processar_livro(file_path):
 
         for nota_ref, nota_conteudo in estrutura["notas_rodape"].items():
             if nota_ref in conteudo:
-                conteudo = conteudo.replace(nota_ref, "") 
-                insert_nota_rodape(tipo, livro_id, nota_conteudo)  # Associa a nota ao elemento
+                conteudo = conteudo.replace(nota_ref, "")
+                insert_nota_rodape("elemento", livro_id, nota_conteudo)
                 print(f"Nota de rodapé associada: {nota_ref} -> {nota_conteudo}")
 
         if tipo == "titulos":
             titulo_id = process_titulos(livro_id, conteudo)
             print(f"Título inserido: {conteudo}")
+            capitulo_id = insert_capitulo(titulo_id, "Capítulo Geral")
+            secao_id = insert_secao(capitulo_id, "Seção Geral")
+            artigo_id = insert_artigo(secao_id, "Artigo Geral")
         elif tipo == "capitulos":
             capitulo_id = process_capitulos(titulo_id, conteudo)
             print(f"Capítulo inserido: {conteudo}")
+            secao_id = insert_secao(capitulo_id, "Seção Geral")
+            artigo_id = insert_artigo(secao_id, "Artigo Geral")
         elif tipo == "secaos":
             secao_id = insert_secao(capitulo_id, conteudo)
             print(f"Seção inserida: {conteudo}")
+            artigo_id = insert_artigo(secao_id, "Artigo Geral")
         elif tipo == "artigos":
             artigo_id = process_artigos(secao_id, conteudo)
             print(f"Artigo inserido: {conteudo}")
@@ -177,11 +236,24 @@ def processar_livro(file_path):
             process_paragrafos(artigo_id, conteudo, tipo_paragrafo)
             print(f"Parágrafo inserido: {conteudo}")
         elif tipo == "remissaos":
-            if 'artigo_id' not in locals():
-                artigo_id = insert_artigo(secao_id, "Artigo Geral")
-                print(f"Artigo Geral inserido com ID: {artigo_id}")
+            if artigo_id is None:
+                raise ValueError("Erro: Nenhum artigo associado para a remissão.")
             insert_remissao(artigo_id, conteudo)
             print(f"Remissão inserida: {conteudo}")
+        else:
+            if artigo_id is None:
+                if secao_id is None:
+                    secao_id = insert_secao(capitulo_id, "Seção Geral")
+                    print("Seção Geral criada.")
+                if capitulo_id is None:
+                    capitulo_id = insert_capitulo(titulo_id, "Capítulo Geral")
+                    print("Capítulo Geral criado.")
+                if titulo_id is None:
+                    titulo_id = insert_titulo(livro_id, "Título Geral")
+                    print("Título Geral criado.")
+                artigo_id = insert_artigo(secao_id, "Artigo Geral")
+                print("Artigo Geral criado.")
+
     for tabela in estrutura["tabelas"]:
         insert_quadro(livro_id, "tabela", tabela)
         print(f"Tabela inserida: {tabela['header']}")
