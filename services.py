@@ -208,7 +208,10 @@ def processar_livro(file_path):
 
         for nota_ref, nota_conteudo in estrutura["notas_rodape"].items():
             if nota_ref in conteudo:
-                conteudo = conteudo.replace(nota_ref, "") 
+                conteudo = conteudo.replace(
+                    nota_ref,
+                    f'<a href="#nota-{nota_ref.strip("#")}" class="nota-rodape-link">{nota_ref}</a>'
+                )
                 insert_nota_rodape(tipo, livro_id, nota_conteudo)
                 print(f"Nota de rodapé associada: {nota_ref} -> {nota_conteudo}")
 
@@ -258,6 +261,7 @@ def processar_livro(file_path):
         insert_quadro(livro_id, "tabela", tabela)
         print(f"Tabela inserida: {tabela['header']}")
 
+    return estrutura
 # API com FastAPI
 app = FastAPI()
 
